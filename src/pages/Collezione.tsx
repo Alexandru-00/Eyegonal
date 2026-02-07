@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Filter, Grid, List, ShoppingBag } from 'lucide-react'
+import { Grid, List, ShoppingBag } from 'lucide-react'
 import { PageTransition } from '@/components/layout'
 import { Button, ProductCard, HexagonGrid } from '@/components/ui'
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Instagram, MapPin, Send, Check, ExternalLink } from 'lucide-react'
+import { Mail, Instagram, Send, Check, ExternalLink } from 'lucide-react'
 import { PageTransition } from '@/components/layout'
 import { Button, Hexagon, HexagonGrid, Logo } from '@/components/ui'
 
