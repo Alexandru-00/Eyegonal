@@ -1,0 +1,37 @@
+<svg width="1000" height="1000" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sfondo: Esagono diviso -->
+  <path d="M500 50 L890 275 V725 L500 950 V50 Z" fill="white"/>
+  <path d="M500 50 L110 275 V725 L500 950 V50 Z" fill="black"/>
+  
+  <!-- Bordo Esagono -->
+  <path d="M500 50 L890 275 V725 L500 950 L110 725 V275 L500 50" fill="none" stroke="black" stroke-width="40" stroke-linejoin="round"/>
+  
+  <!-- Occhio Centrale -->
+  <g transform="translate(500, 500)">
+    <!-- Forma esterna occhio -->
+    <path d="M-300 0 C-150 -250 150 -250 300 0 C 150 250 -150 250 -300 0 Z" fill="none" stroke="black" stroke-width="40" id="eye-outline"/>
+    
+    <!-- Parte destra (bianca su nero) -->
+    <clipPath id="right-half">
+      <rect x="0" y="-500" width="500" height="1000" />
+    </clipPath>
+    <clipPath id="left-half">
+      <rect x="-500" y="-500" width="500" height="1000" />
+    </clipPath>
+
+    <!-- Riempimento Occhio -->
+    <path d="M-300 0 C-150 -250 150 -250 300 0 C 150 250 -150 250 -300 0 Z" fill="white" clip-path="url(#right-half)"/>
+    <path d="M-300 0 C-150 -250 150 -250 300 0 C 150 250 -150 250 -300 0 Z" fill="black" clip-path="url(#left-half)"/>
+
+    <!-- Pupilla / Iride -->
+    <circle cx="0" cy="0" r="150" fill="black" clip-path="url(#right-half)"/>
+    <circle cx="0" cy="0" r="150" fill="white" clip-path="url(#left-half)"/>
+    
+    <!-- Dettaglio Pupilla (Yin Yang style) -->
+    <circle cx="0" cy="0" r="70" fill="white" clip-path="url(#right-half)"/>
+    <circle cx="0" cy="0" r="70" fill="black" clip-path="url(#left-half)"/>
+    
+    <!-- Riflesso -->
+    <path d="M-20 -20 A 40 40 0 0 1 20 -20" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" clip-path="url(#left-half)"/>
+  </g>
+</svg>

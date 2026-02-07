@@ -1,0 +1,43 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Hexagon -->
+  <polygon 
+    points="50,2 95,27 95,73 50,98 5,73 5,27" 
+    fill="none" 
+    stroke="currentColor" 
+    stroke-width="4"
+  />
+  
+  <!-- Inner Hexagon -->
+  <polygon 
+    points="50,15 82,35 82,65 50,85 18,65 18,35" 
+    fill="none" 
+    stroke="currentColor" 
+    stroke-width="3"
+  />
+  
+  <!-- Eye Outline -->
+  <ellipse 
+    cx="50" 
+    cy="50" 
+    rx="22" 
+    ry="15" 
+    fill="none" 
+    stroke="currentColor" 
+    stroke-width="3"
+  />
+  
+  <!-- Pupil -->
+  <circle 
+    cx="50" 
+    cy="50" 
+    r="8" 
+    fill="currentColor"
+  />
+  
+  <style>
+    svg { color: #000; }
+    @media (prefers-color-scheme: dark) {
+      svg { color: #fff; }
+    }
+  </style>
+</svg>
