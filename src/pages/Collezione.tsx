@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Grid, List, ShoppingBag } from 'lucide-react'
 import { PageTransition } from '@/components/layout'
 import { Button, ProductCard, HexagonGrid } from '@/components/ui'
+import { supabase } from '@/supabase'
+import type { Product } from '@/types'
 
 type Category = 'all' | 'tshirt' | 'hoodie' | 'accessories'
 
@@ -13,60 +15,35 @@ const categories: { id: Category; label: string }[] = [
   { id: 'accessories', label: 'Accessori' },
 ]
 
-const products = [
-  {
-    id: '1',
-    name: 'Eye Tee Black',
-    price: 35,
-    category: 'tshirt' as Category,
-    image: '/images/products/tee-black.jpg',
-    description: 'T-shirt nera con logo Eyegonal frontale',
-  },
-  {
-    id: '2',
-    name: 'Eye Tee White',
-    price: 35,
-    category: 'tshirt' as Category,
-    image: '/images/products/tee-white.jpg',
-    description: 'T-shirt bianca con logo Eyegonal frontale',
-  },
-  {
-    id: '3',
-    name: 'Hexagon Hoodie Black',
-    price: 55,
-    category: 'hoodie' as Category,
-    image: '/images/products/hoodie-black.jpg',
-    description: 'Felpa nera con cappuccio e logo esagonale',
-  },
-  {
-    id: '4',
-    name: 'Hexagon Hoodie White',
-    price: 55,
-    category: 'hoodie' as Category,
-    image: '/images/products/hoodie-white.jpg',
-    description: 'Felpa bianca con cappuccio e logo esagonale',
-  },
-  {
-    id: '5',
-    name: 'Eye Long Sleeve Black',
-    price: 42,
-    category: 'tshirt' as Category,
-    image: '/images/products/longsleeve-black.jpg',
-    description: 'Maglia a maniche lunghe nera',
-  },
-  {
-    id: '6',
-    name: 'Eye Long Sleeve White',
-    price: 42,
-    category: 'tshirt' as Category,
-    image: '/images/products/longsleeve-white.jpg',
-    description: 'Maglia a maniche lunghe bianca',
-  },
-]
-
 export function Collezione() {
   const [activeCategory, setActiveCategory] = useState<Category>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching products:', error)
+        return
+      }
+
+      setProducts(data || [])
+    } catch (error) {
+      console.error('Error in fetchProducts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredProducts = activeCategory === 'all'
     ? products
@@ -159,20 +136,25 @@ export function Collezione() {
           </motion.div>
 
           {/* Products */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCategory}
-              className={`
-                ${viewMode === 'grid' 
-                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8' 
-                  : 'flex flex-col gap-6'
-                }
-              `}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-eyegonal-black dark:border-white"></div>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeCategory}
+                className={`
+                  ${viewMode === 'grid'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'
+                    : 'flex flex-col gap-6'
+                  }
+                `}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
               {filteredProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
@@ -214,8 +196,9 @@ export function Collezione() {
                   )}
                 </motion.div>
               ))}
-            </motion.div>
-          </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          )}
 
           {/* Empty State */}
           {filteredProducts.length === 0 && (

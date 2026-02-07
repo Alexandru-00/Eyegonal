@@ -3,11 +3,17 @@ export interface Product {
   name: string
   description: string
   price: number
-  images: string[]
+  image: string
   category: 'tshirt' | 'hoodie' | 'accessories'
-  sizes: string[]
-  colors: ('black' | 'white')[]
-  featured?: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  created_at: string
+  last_login: string | null
 }
 
 export interface NavItem {
