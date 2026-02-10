@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { supabase } from '@/supabase'
-import bcrypt from 'bcryptjs'
 
 interface AdminUser {
   id: string
@@ -61,38 +60,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Find admin user by email
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', email)
-        .single()
+      // Call Supabase Edge Function to verify admin credentials
+      const { data, error } = await supabase.functions.invoke('verify-admin-password', {
+        body: { email, password }
+      })
 
-      if (adminError || !adminData) {
-        return { error: { message: 'Email o password non validi.' } }
+      if (error) {
+        console.error('Function error:', error)
+        return { error: { message: 'Errore durante il login. Riprova.' } }
       }
 
-      // Verify password with bcrypt
-      const isValidPassword = await bcrypt.compare(password, adminData.password_hash)
-
-      if (!isValidPassword) {
-        return { error: { message: 'Email o password non validi.' } }
+      if (data.error) {
+        return { error: { message: data.error } }
       }
 
-      // Update last login
-      await supabase
-        .from('admin_users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', adminData.id)
-
-      // Create session
+      // Create session with admin user data
       const sessionData = {
-        adminUser: adminData,
+        adminUser: data.adminUser,
         timestamp: new Date().toISOString()
       }
 
       localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData))
-      setAdminUser(adminData)
+      setAdminUser(data.adminUser)
 
       return { error: null }
     } catch (error) {
