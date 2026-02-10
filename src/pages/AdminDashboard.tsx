@@ -1,24 +1,33 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Edit, Trash2, LogOut, Package, Users, BarChart3 } from 'lucide-react'
+import { Plus, Edit, Trash2, LogOut, Package, Users, BarChart3, Settings, Tag } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { supabase } from '@/supabase'
-import { Button } from '@/components/ui'
+import { ProductService, CategoryService } from '@/services'
+import { Button, ToastContainer } from '@/components/ui'
 import { PageTransition } from '@/components/layout'
-import type { Product } from '@/types'
+import { ProductModal, CategoryManager } from '@/components/admin'
+import { useToast } from '@/hooks'
+import type { ProductWithCategory } from '@/types'
 
 export function AdminDashboard() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<ProductWithCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalCategories: 0,
     totalValue: 0,
   })
+  const [productModal, setProductModal] = useState({
+    isOpen: false,
+    mode: 'create' as 'create' | 'edit',
+    product: null as ProductWithCategory | null,
+  })
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false)
 
   const { adminUser, signOut } = useAuth()
   const navigate = useNavigate()
+  const { toasts, removeToast, success, error } = useToast()
 
   useEffect(() => {
     if (!adminUser) {
@@ -31,13 +40,11 @@ export function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const { data, error } = await ProductService.getAll()
 
       if (error) {
         console.error('Error fetching products:', error)
+        error('Errore nel caricamento dei prodotti')
         return
       }
 
@@ -45,7 +52,7 @@ export function AdminDashboard() {
 
       // Calculate stats
       const totalProducts = data?.length || 0
-      const categories = new Set(data?.map(p => p.category) || [])
+      const categories = new Set(data?.map(p => p.category?.name) || [])
       const totalValue = data?.reduce((sum, p) => sum + p.price, 0) || 0
 
       setStats({
@@ -66,33 +73,68 @@ export function AdminDashboard() {
     }
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id)
+      const { error } = await ProductService.delete(id)
 
       if (error) {
         console.error('Error deleting product:', error)
-        alert('Errore durante l\'eliminazione del prodotto')
+        error('Errore durante l\'eliminazione del prodotto')
         return
       }
 
+      const deletedProduct = products.find(p => p.id === id)
       setProducts(products.filter(p => p.id !== id))
+
       // Update stats
       setStats(prev => ({
         ...prev,
         totalProducts: prev.totalProducts - 1,
-        totalValue: prev.totalValue - (products.find(p => p.id === id)?.price || 0),
+        totalValue: prev.totalValue - (deletedProduct?.price || 0),
       }))
+
+      success('Prodotto eliminato con successo')
     } catch (error) {
       console.error('Error in handleDeleteProduct:', error)
-      alert('Errore durante l\'eliminazione del prodotto')
+      error('Errore durante l\'eliminazione del prodotto')
     }
   }
 
   const handleSignOut = async () => {
     await signOut()
     navigate('/admin/login')
+  }
+
+  const openCreateProductModal = () => {
+    setProductModal({
+      isOpen: true,
+      mode: 'create',
+      product: null,
+    })
+  }
+
+  const openEditProductModal = (product: ProductWithCategory) => {
+    setProductModal({
+      isOpen: true,
+      mode: 'edit',
+      product,
+    })
+  }
+
+  const closeProductModal = () => {
+    setProductModal({
+      isOpen: false,
+      mode: 'create',
+      product: null,
+    })
+  }
+
+  const handleProductSuccess = () => {
+    fetchProducts()
+    success('Prodotto salvato con successo')
+  }
+
+  const handleCategorySuccess = () => {
+    fetchProducts() // Refresh products to get updated category info
+    success('Categorie aggiornate con successo')
   }
 
   if (loading) {
@@ -118,6 +160,14 @@ export function AdminDashboard() {
                 </h1>
               </div>
               <div className="flex items-center space-x-4">
+                <Button
+                  onClick={() => setCategoryManagerOpen(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Tag className="w-4 h-4 mr-2" />
+                  Categorie
+                </Button>
                 <span className="text-sm text-eyegonal-gray-600 dark:text-eyegonal-gray-400">
                   {adminUser?.email}
                 </span>
@@ -207,7 +257,7 @@ export function AdminDashboard() {
                 <h2 className="text-lg font-display font-semibold text-eyegonal-black dark:text-white">
                   Tutti i Prodotti
                 </h2>
-                <Button>
+                <Button onClick={openCreateProductModal}>
                   <Plus className="w-4 h-4 mr-2" />
                   Aggiungi Prodotto
                 </Button>
@@ -236,8 +286,14 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-eyegonal-gray-900 divide-y divide-eyegonal-gray-200 dark:divide-eyegonal-gray-800">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-eyegonal-gray-50 dark:hover:bg-eyegonal-gray-800">
+                  {products.map((product, index) => (
+                    <motion.tr
+                      key={product.id}
+                      className="hover:bg-eyegonal-gray-50 dark:hover:bg-eyegonal-gray-800"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="w-16 h-16 bg-eyegonal-gray-100 dark:bg-eyegonal-gray-800 flex-shrink-0">
                           {product.image && (
@@ -259,8 +315,7 @@ export function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-medium bg-eyegonal-gray-100 dark:bg-eyegonal-gray-800 text-eyegonal-gray-800 dark:text-eyegonal-gray-200 capitalize">
-                          {product.category === 'tshirt' ? 'T-Shirt' :
-                           product.category === 'hoodie' ? 'Felpe' : 'Accessori'}
+                          {product.category?.name || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-eyegonal-black dark:text-white">
@@ -269,6 +324,7 @@ export function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
+                            onClick={() => openEditProductModal(product)}
                             className="text-eyegonal-gray-600 dark:text-eyegonal-gray-400 hover:text-eyegonal-black dark:hover:text-white"
                             title="Modifica"
                           >
@@ -283,7 +339,7 @@ export function AdminDashboard() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))}
                 </tbody>
               </table>
@@ -299,7 +355,7 @@ export function AdminDashboard() {
                   Inizia aggiungendo il tuo primo prodotto.
                 </p>
                 <div className="mt-6">
-                  <Button>
+                  <Button onClick={openCreateProductModal}>
                     <Plus className="w-4 h-4 mr-2" />
                     Aggiungi Prodotto
                   </Button>
@@ -309,6 +365,23 @@ export function AdminDashboard() {
           </motion.div>
         </div>
       </div>
+
+      {/* Modals */}
+      <ProductModal
+        isOpen={productModal.isOpen}
+        onClose={closeProductModal}
+        onSuccess={handleProductSuccess}
+        product={productModal.product}
+        mode={productModal.mode}
+      />
+
+      <CategoryManager
+        isOpen={categoryManagerOpen}
+        onClose={() => setCategoryManagerOpen(false)}
+        onSuccess={handleCategorySuccess}
+      />
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </PageTransition>
   )
 }

@@ -104,3 +104,19 @@ INSERT INTO products (name, price, category_id, image, description) VALUES
 -- NOTA: In produzione, usa una password sicura e hashala con bcrypt
 INSERT INTO admin_users (email, password_hash) VALUES
 ('admin@eyegonal.com', '$2b$10$8K3Q8VzJW8X6K8VzJW8X6K8VzJW8X6K8VzJW8X6K8VzJW8X6K'); -- password: admin123
+
+-- Configurazione Storage per le immagini dei prodotti
+-- Crea il bucket 'products' se non esiste (da fare manualmente nella dashboard Storage)
+-- Policy per accesso pubblico in lettura
+CREATE POLICY "Products images are publicly accessible" ON storage.objects
+  FOR SELECT USING (bucket_id = 'products');
+
+-- Policy per upload/modifica da parte di utenti autenticati
+CREATE POLICY "Authenticated users can upload product images" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'products' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can update product images" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'products' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can delete product images" ON storage.objects
+  FOR DELETE USING (bucket_id = 'products' AND auth.role() = 'authenticated');

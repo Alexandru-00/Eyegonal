@@ -4,9 +4,22 @@ export interface Product {
   description: string
   price: number
   image: string
-  category: 'tshirt' | 'hoodie' | 'accessories'
+  category_id: string
+  category?: Category
   created_at: string
   updated_at: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  description: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductWithCategory extends Product {
+  category: Category
 }
 
 export interface AdminUser {
