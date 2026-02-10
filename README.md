@@ -4,7 +4,7 @@
 
 Sito web vetrina per il brand di abbigliamento Eyegonal.
 
-## Caratteristiche
+## Caratteristichedd
 
 - **Design Esagonale**: Tema visivo basato sulla forma esagonale del logo
 - **Tema Dark/Light**: Switch completo tra modalità chiara e scura
