@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { supabase } from '@/supabase'
-import type { User } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 interface AdminUser {
   id: string
@@ -10,7 +10,6 @@ interface AdminUser {
 }
 
 interface AuthContextType {
-  user: User | null
   adminUser: AdminUser | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
@@ -24,99 +23,92 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+const ADMIN_SESSION_KEY = 'eyegonal_admin_session'
+
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchAdminUser(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchAdminUser(session.user.id)
-      } else {
-        setAdminUser(null)
-      }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    // Check for existing admin session
+    checkAdminSession()
   }, [])
 
-  const fetchAdminUser = async (userId: string) => {
+  const checkAdminSession = () => {
     try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      const sessionData = localStorage.getItem(ADMIN_SESSION_KEY)
+      if (sessionData) {
+        const session = JSON.parse(sessionData)
+        // Check if session is still valid (24 hours)
+        const sessionTime = new Date(session.timestamp).getTime()
+        const now = new Date().getTime()
+        const hoursDiff = (now - sessionTime) / (1000 * 60 * 60)
 
-      if (error) {
-        console.error('Error fetching admin user:', error)
-        setAdminUser(null)
-      } else {
-        setAdminUser(data)
-        // Update last login
-        await supabase
-          .from('admin_users')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', userId)
+        if (hoursDiff < 24) {
+          setAdminUser(session.adminUser)
+        } else {
+          // Session expired
+          localStorage.removeItem(ADMIN_SESSION_KEY)
+        }
       }
     } catch (error) {
-      console.error('Error in fetchAdminUser:', error)
-      setAdminUser(null)
+      console.error('Error checking admin session:', error)
+      localStorage.removeItem(ADMIN_SESSION_KEY)
+    } finally {
+      setLoading(false)
     }
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      return { error }
-    }
-
-    // Check if user is admin
-    if (data.user) {
+    try {
+      // Find admin user by email
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select('*')
-        .eq('id', data.user.id)
+        .eq('email', email)
         .single()
 
       if (adminError || !adminData) {
-        // Sign out if not admin
-        await supabase.auth.signOut()
-        return { error: { message: 'Accesso negato. Solo amministratori possono accedere.' } }
+        return { error: { message: 'Email o password non validi.' } }
       }
-    }
 
-    return { error: null }
+      // Verify password with bcrypt
+      const isValidPassword = await bcrypt.compare(password, adminData.password_hash)
+
+      if (!isValidPassword) {
+        return { error: { message: 'Email o password non validi.' } }
+      }
+
+      // Update last login
+      await supabase
+        .from('admin_users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', adminData.id)
+
+      // Create session
+      const sessionData = {
+        adminUser: adminData,
+        timestamp: new Date().toISOString()
+      }
+
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData))
+      setAdminUser(adminData)
+
+      return { error: null }
+    } catch (error) {
+      console.error('Error during admin sign in:', error)
+      return { error: { message: 'Errore durante il login. Riprova.' } }
+    }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    localStorage.removeItem(ADMIN_SESSION_KEY)
     setAdminUser(null)
   }
 
   const isAdmin = !!adminUser
 
   const value = {
-    user,
     adminUser,
     loading,
     signIn,
