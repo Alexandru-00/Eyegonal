@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Instagram, ShoppingBag } from 'lucide-react'
 import { Logo, LogoText, ThemeToggle } from '@/components/ui'
+import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -15,6 +16,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const location = useLocation()
+  const { isAdmin } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -59,8 +61,8 @@ export function Header() {
                   <span className={`
                     text-sm uppercase tracking-wider font-medium
                     transition-colors duration-300
-                    ${location.pathname === item.href 
-                      ? 'text-eyegonal-black dark:text-white' 
+                    ${location.pathname === item.href
+                      ? 'text-eyegonal-black dark:text-white'
                       : 'text-eyegonal-gray-500 hover:text-eyegonal-black dark:hover:text-white'
                     }
                   `}>
@@ -75,6 +77,29 @@ export function Header() {
                   />
                 </Link>
               ))}
+              {/* Admin Link */}
+              <Link
+                to={isAdmin ? '/admin/dashboard' : '/admin/login'}
+                className="relative group"
+              >
+                <span className={`
+                  text-sm uppercase tracking-wider font-medium
+                  transition-colors duration-300
+                  ${(location.pathname === '/admin/dashboard' || location.pathname === '/admin/login')
+                    ? 'text-eyegonal-black dark:text-white'
+                    : 'text-eyegonal-gray-500 hover:text-eyegonal-black dark:hover:text-white'
+                  }
+                `}>
+                  Admin
+                </span>
+                <motion.span
+                  className="absolute -bottom-1 left-0 h-0.5 bg-eyegonal-black dark:bg-white"
+                  initial={{ width: 0 }}
+                  animate={{ width: (location.pathname === '/admin/dashboard' || location.pathname === '/admin/login') ? '100%' : 0 }}
+                  whileHover={{ width: '100%' }}
+                  transition={{ duration: 0.3 }}
+                />
+              </Link>
             </div>
 
             {/* Actions */}
@@ -148,8 +173,8 @@ export function Header() {
                       to={item.href}
                       className={`
                         block py-3 text-lg font-medium border-b border-eyegonal-gray-200 dark:border-eyegonal-gray-800
-                        ${location.pathname === item.href 
-                          ? 'text-eyegonal-black dark:text-white' 
+                        ${location.pathname === item.href
+                          ? 'text-eyegonal-black dark:text-white'
                           : 'text-eyegonal-gray-500'
                         }
                       `}
@@ -158,6 +183,25 @@ export function Header() {
                     </Link>
                   </motion.div>
                 ))}
+                {/* Admin Link Mobile */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link
+                    to={isAdmin ? '/admin/dashboard' : '/admin/login'}
+                    className={`
+                      block py-3 text-lg font-medium border-b border-eyegonal-gray-200 dark:border-eyegonal-gray-800
+                      ${(location.pathname === '/admin/dashboard' || location.pathname === '/admin/login')
+                        ? 'text-eyegonal-black dark:text-white'
+                        : 'text-eyegonal-gray-500'
+                      }
+                    `}
+                  >
+                    Admin
+                  </Link>
+                </motion.div>
                 <motion.a
                   href="https://www.vinted.it/member/250232039-eyegonal"
                   target="_blank"
@@ -165,7 +209,7 @@ export function Header() {
                   className="flex items-center justify-center gap-2 mt-4 py-4 bg-eyegonal-black dark:bg-white text-white dark:text-eyegonal-black font-medium"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: 0.5 }}
                 >
                   <ShoppingBag className="w-5 h-5" />
                   Acquista su Vinted
