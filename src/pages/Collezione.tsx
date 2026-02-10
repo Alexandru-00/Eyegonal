@@ -8,6 +8,11 @@ import type { Product } from '@/types'
 
 type Category = 'all' | 'tshirt' | 'hoodie' | 'accessories'
 
+// Local type for products with category name as string
+type ProductWithCategoryName = Omit<Product, 'category'> & {
+  category: string
+}
+
 const categories: { id: Category; label: string }[] = [
   { id: 'all', label: 'Tutto' },
   { id: 'tshirt', label: 'T-Shirt' },
@@ -18,7 +23,7 @@ const categories: { id: Category; label: string }[] = [
 export function Collezione() {
   const [activeCategory, setActiveCategory] = useState<Category>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<ProductWithCategoryName[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +34,10 @@ export function Collezione() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          category:categories(name)
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -37,7 +45,13 @@ export function Collezione() {
         return
       }
 
-      setProducts(data || [])
+      // Transform the data to match expected format
+      const transformedData = (data || []).map(product => ({
+        ...product,
+        category: product.category?.name || ''
+      }))
+
+      setProducts(transformedData)
     } catch (error) {
       console.error('Error in fetchProducts:', error)
     } finally {

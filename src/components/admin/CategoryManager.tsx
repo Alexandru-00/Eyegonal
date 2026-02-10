@@ -19,7 +19,6 @@ export function CategoryManager({ isOpen, onClose, onSuccess }: CategoryManagerP
   const [newCategory, setNewCategory] = useState({ name: '', description: '' })
   const [editForm, setEditForm] = useState({ name: '', description: '' })
   const [saving, setSaving] = useState(false)
-  const { success, error } = useToast()
 
   useEffect(() => {
     if (isOpen) {

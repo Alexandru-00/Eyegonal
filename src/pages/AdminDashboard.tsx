@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Edit, Trash2, LogOut, Package, Users, BarChart3, Settings, Tag } from 'lucide-react'
+import { Plus, Edit, Trash2, LogOut, Package, Users, BarChart3, Tag } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { ProductService, CategoryService } from '@/services'
+import { ProductService } from '@/services'
 import { Button, ToastContainer } from '@/components/ui'
 import { PageTransition } from '@/components/layout'
 import { ProductModal, CategoryManager } from '@/components/admin'
@@ -27,7 +27,7 @@ export function AdminDashboard() {
 
   const { adminUser, signOut } = useAuth()
   const navigate = useNavigate()
-  const { toasts, removeToast, success, error } = useToast()
+  const { toasts, removeToast, success, error: showError } = useToast()
 
   useEffect(() => {
     if (!adminUser) {
@@ -92,9 +92,9 @@ export function AdminDashboard() {
       }))
 
       success('Prodotto eliminato con successo')
-    } catch (error) {
-      console.error('Error in handleDeleteProduct:', error)
-      error('Errore durante l\'eliminazione del prodotto')
+    } catch (err) {
+      console.error('Error in handleDeleteProduct:', err)
+      showError('Errore durante l\'eliminazione del prodotto')
     }
   }
 

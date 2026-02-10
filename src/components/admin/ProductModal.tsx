@@ -4,7 +4,7 @@ import { X, Upload, Save, Loader } from 'lucide-react'
 import { ProductService, CategoryService, StorageService } from '@/services'
 import { Button } from '@/components/ui'
 import { useToast } from '@/hooks'
-import type { Product, Category, ProductWithCategory } from '@/types'
+import type { Category, ProductWithCategory } from '@/types'
 
 interface ProductModalProps {
   isOpen: boolean
@@ -64,25 +64,6 @@ export function ProductModal({ isOpen, onClose, onSuccess, product, mode }: Prod
     })
     setImageFile(null)
     setImagePreview('')
-  }
-
-  const handleImageUpload = async (file: File) => {
-    setUploadingImage(true)
-    try {
-      const { url, error } = await StorageService.uploadImage(file, formData.name || 'product')
-      if (error) {
-        showError('Errore durante l\'upload dell\'immagine')
-        return
-      }
-      if (url) {
-        setFormData(prev => ({ ...prev, image: url }))
-        setImagePreview(url)
-      }
-    } catch (error) {
-      alert('Errore durante l\'upload dell\'immagine')
-    } finally {
-      setUploadingImage(false)
-    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
