@@ -17,7 +17,6 @@ interface ProductModalProps {
 export function ProductModal({ isOpen, onClose, onSuccess, product, mode }: ProductModalProps) {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
-  const [uploadingImage, setUploadingImage] = useState(false)
   const { error: showError } = useToast()
   const [formData, setFormData] = useState({
     name: '',
@@ -266,17 +265,8 @@ export function ProductModal({ isOpen, onClose, onSuccess, product, mode }: Prod
                       htmlFor="image-upload"
                       className="block w-full px-4 py-2 text-center border border-eyegonal-gray-300 dark:border-eyegonal-gray-700 rounded-md bg-white dark:bg-eyegonal-gray-800 text-eyegonal-gray-700 dark:text-eyegonal-gray-300 hover:bg-eyegonal-gray-50 dark:hover:bg-eyegonal-gray-700 cursor-pointer transition-colors"
                     >
-                      {uploadingImage ? (
-                        <>
-                          <Loader className="w-4 h-4 animate-spin inline mr-2" />
-                          Caricamento...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 inline mr-2" />
-                          Seleziona Immagine
-                        </>
-                      )}
+                      <Upload className="w-4 h-4 inline mr-2" />
+                      Seleziona Immagine
                     </label>
                   </div>
                 </div>

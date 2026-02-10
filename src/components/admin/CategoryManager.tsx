@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit, Trash2, Save, X, Loader } from 'lucide-react'
 import { CategoryService } from '@/services'
 import { Button } from '@/components/ui'
-import { useToast } from '@/hooks'
 import type { Category } from '@/types'
 
 interface CategoryManagerProps {
