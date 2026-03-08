@@ -95,11 +95,12 @@ Il login usa la tabella `admin_users` tramite RPC Supabase `verify_admin_login` 
    `supabase/migrations/0002_verify_admin_login_rpc.sql`
 
 2. **Storage immagini prodotti**: Dashboard → Storage → New bucket → nome `products` (Public).  
-   Poi esegui `supabase/migrations/0003_storage_policies.sql` per le policy.
+   L'upload passa da API `/api/upload-product-image` con service_role (nessuna policy richiesta).
 
-3. **Variabili d'ambiente** (solo frontend, già richieste per Supabase):
-   - `VITE_SUPABASE_URL` – URL progetto Supabase
-   - `VITE_SUPABASE_ANON_KEY` – Chiave anon (Dashboard → Settings → API)
+3. **Variabili d'ambiente** (Vercel):
+   - `VITE_SUPABASE_URL` o `SUPABASE_URL` – URL progetto Supabase
+   - `VITE_SUPABASE_ANON_KEY` – Chiave anon (build frontend)
+   - `SUPABASE_SERVICE_ROLE_KEY` – Chiave service_role (API upload immagini)
 
 ## Link Utili
 

@@ -5,28 +5,33 @@ export class StorageService {
 
   static async uploadImage(file: File, productName: string): Promise<{ url: string | null, error: any }> {
     try {
-      // Create a unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${productName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.${fileExt}`
 
-      const { data, error } = await supabase.storage
-        .from(this.BUCKET_NAME)
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: file.type || 'image/png'
-        })
+      // Usa API serverless (service_role) - bypassa RLS e policy bucket
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          const base64 = result.split(',')[1] || result
+          resolve(base64)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
 
-      if (error) {
-        return { url: null, error }
+      const base = typeof window !== 'undefined' ? window.location.origin : ''
+      const res = await fetch(`${base}/api/upload-product-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, fileName }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        return { url: null, error: { message: data.error || 'Upload fallito' } }
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(this.BUCKET_NAME)
-        .getPublicUrl(data.path)
-
-      return { url: publicUrl, error: null }
+      return { url: data.url || null, error: null }
     } catch (error) {
       return { url: null, error }
     }
