@@ -30,7 +30,7 @@ BEGIN
     RETURN jsonb_build_object('error', 'Credenziali non valide');
   END IF;
 
-  IF crypt(p_password, v_admin.password_hash) != v_admin.password_hash THEN
+  IF extensions.crypt(p_password, v_admin.password_hash) != v_admin.password_hash THEN
     RETURN jsonb_build_object('error', 'Credenziali non valide');
   END IF;
 
