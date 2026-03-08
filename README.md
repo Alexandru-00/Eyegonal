@@ -94,7 +94,10 @@ Il login usa la tabella `admin_users` tramite RPC Supabase `verify_admin_login` 
 1. **Esegui la migration** in Supabase SQL Editor:  
    `supabase/migrations/0002_verify_admin_login_rpc.sql`
 
-2. **Variabili d'ambiente** (solo frontend, già richieste per Supabase):
+2. **Storage immagini prodotti**: Dashboard → Storage → New bucket → nome `products` (Public).  
+   Poi esegui `supabase/migrations/0003_storage_policies.sql` per le policy.
+
+3. **Variabili d'ambiente** (solo frontend, già richieste per Supabase):
    - `VITE_SUPABASE_URL` – URL progetto Supabase
    - `VITE_SUPABASE_ANON_KEY` – Chiave anon (Dashboard → Settings → API)
 
