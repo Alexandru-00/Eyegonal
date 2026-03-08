@@ -91,8 +91,9 @@ Modifica i prodotti in `src/pages/Collezione.tsx` e aggiungi le immagini in `pub
 
 Il login usa la tabella `admin_users` tramite RPC Supabase `verify_admin_login` (nessun CORS, massima scalabilità).
 
-1. **Esegui la migration** in Supabase SQL Editor:  
-   `supabase/migrations/0002_verify_admin_login_rpc.sql`
+1. **Esegui le migration** in Supabase SQL Editor (in ordine):  
+   - `supabase/migrations/0002_verify_admin_login_rpc.sql`  
+   - `supabase/migrations/0003_admin_session_rpc.sql` (sessioni admin per CRUD prodotti/categorie, scalabile senza Anonymous Auth)
 
 2. **Storage immagini prodotti**: Dashboard → Storage → New bucket → nome `products` (Public).  
    L'upload passa da API `/api/upload-product-image` con service_role (nessuna policy richiesta).
