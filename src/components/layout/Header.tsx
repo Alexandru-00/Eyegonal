@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Instagram, ShoppingBag, Shield } from 'lucide-react'
+import { Menu, X, Instagram, ShoppingBag, Shield, LogIn } from 'lucide-react'
 import { Logo, LogoText, ThemeToggle } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 
@@ -16,7 +16,7 @@ export function Header() {
     { label: 'Collezione', href: '/collezione' },
     { label: 'About', href: '/about' },
     { label: 'Contatti', href: '/contatti' },
-    ...(isAdmin ? [{ label: 'Admin', href: '/admin/dashboard' }] : []),
+    ...(isAdmin ? [{ label: 'Admin', href: '/admin/dashboard' }] : [{ label: 'Login', href: '/admin/login' }]),
   ]
 
   useEffect(() => {
@@ -68,6 +68,7 @@ export function Header() {
                     }
                   `}>
                     {item.label === 'Admin' && <Shield className="w-4 h-4" />}
+                    {item.label === 'Login' && <LogIn className="w-4 h-4" />}
                     {item.label}
                   </span>
                   <motion.span
@@ -159,6 +160,7 @@ export function Header() {
                       `}
                     >
                       {item.label === 'Admin' && <Shield className="w-5 h-5" />}
+                      {item.label === 'Login' && <LogIn className="w-5 h-5" />}
                       {item.label}
                     </Link>
                   </motion.div>
