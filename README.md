@@ -87,12 +87,16 @@ Il progetto usa:
 
 Modifica i prodotti in `src/pages/Collezione.tsx` e aggiungi le immagini in `public/images/products/`.
 
-## Admin Login (Vercel)
+## Admin Login
 
-Il login usa la tabella `admin_users` via API `/api/verify-admin`. In Vercel aggiungi:
+Il login usa la tabella `admin_users` tramite RPC Supabase `verify_admin_login` (nessun CORS, massima scalabilità).
 
-- `SUPABASE_URL` – URL progetto Supabase
-- `SUPABASE_SERVICE_ROLE_KEY` – Chiave service_role (Supabase Dashboard → Settings → API)
+1. **Esegui la migration** in Supabase SQL Editor:  
+   `supabase/migrations/0002_verify_admin_login_rpc.sql`
+
+2. **Variabili d'ambiente** (solo frontend, già richieste per Supabase):
+   - `VITE_SUPABASE_URL` – URL progetto Supabase
+   - `VITE_SUPABASE_ANON_KEY` – Chiave anon (Dashboard → Settings → API)
 
 ## Link Utili
 

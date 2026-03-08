@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { supabase } from '../supabase'
 
 interface AdminUser {
   id: string
@@ -49,25 +50,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const base = typeof window !== 'undefined' ? window.location.origin : ''
-      const res = await fetch(`${base}/api/verify-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.rpc('verify_admin_login', {
+        p_email: email,
+        p_password: password,
       })
 
-      const data = await res.json()
+      if (error) {
+        return { error: { message: error.message || 'Errore durante il login' } }
+      }
 
-      if (!res.ok) {
-        return { error: { message: data.error || 'Credenziali non valide' } }
+      const errMsg = data?.error
+      if (errMsg) {
+        return { error: { message: errMsg } }
+      }
+
+      const admin = data?.adminUser
+      if (!admin) {
+        return { error: { message: 'Credenziali non valide' } }
       }
 
       const sessionData = {
-        adminUser: data.adminUser,
+        adminUser: admin,
         timestamp: new Date().toISOString(),
       }
       localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData))
-      setAdminUser(data.adminUser)
+      setAdminUser(admin)
       return { error: null }
     } catch (error) {
       console.error('Error during admin sign in:', error)
