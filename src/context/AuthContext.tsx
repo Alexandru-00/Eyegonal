@@ -29,23 +29,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    try {
-      const sessionData = localStorage.getItem(ADMIN_SESSION_KEY)
-      if (sessionData) {
-        const session = JSON.parse(sessionData)
-        const sessionTime = new Date(session.timestamp).getTime()
-        const hoursDiff = (Date.now() - sessionTime) / (1000 * 60 * 60)
-        if (hoursDiff < 24) {
-          setAdminUser(session.adminUser)
-        } else {
-          localStorage.removeItem(ADMIN_SESSION_KEY)
+    const restoreSession = async () => {
+      try {
+        const sessionData = localStorage.getItem(ADMIN_SESSION_KEY)
+        if (sessionData) {
+          const session = JSON.parse(sessionData)
+          const sessionTime = new Date(session.timestamp).getTime()
+          const hoursDiff = (Date.now() - sessionTime) / (1000 * 60 * 60)
+          if (hoursDiff < 24) {
+            setAdminUser(session.adminUser)
+            // Ottieni sessione Supabase per CRUD prodotti (RLS richiede authenticated)
+            const { data: { session: authSession } } = await supabase.auth.getSession()
+            if (!authSession) {
+              await supabase.auth.signInAnonymously()
+            }
+          } else {
+            localStorage.removeItem(ADMIN_SESSION_KEY)
+            await supabase.auth.signOut()
+          }
         }
+      } catch {
+        localStorage.removeItem(ADMIN_SESSION_KEY)
+        await supabase.auth.signOut()
+      } finally {
+        setLoading(false)
       }
-    } catch {
-      localStorage.removeItem(ADMIN_SESSION_KEY)
-    } finally {
-      setLoading(false)
     }
+    restoreSession()
   }, [])
 
   const signIn = async (email: string, password: string) => {
@@ -69,6 +79,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { error: { message: 'Credenziali non valide' } }
       }
 
+      // Sessione Supabase per CRUD prodotti (RLS richiede auth.role = 'authenticated')
+      const { error: authErr } = await supabase.auth.signInAnonymously()
+      if (authErr) {
+        console.warn('signInAnonymously fallito, CRUD prodotti potrebbe non funzionare:', authErr)
+      }
+
       const sessionData = {
         adminUser: admin,
         timestamp: new Date().toISOString(),
@@ -85,6 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     localStorage.removeItem(ADMIN_SESSION_KEY)
     setAdminUser(null)
+    await supabase.auth.signOut()
   }
 
   const isAdmin = !!adminUser
