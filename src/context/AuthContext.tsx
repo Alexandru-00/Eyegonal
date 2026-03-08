@@ -1,6 +1,4 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User } from '@supabase/supabase-js'
-import { supabase } from '@/supabase'
 
 interface AdminUser {
   id: string
@@ -23,45 +21,53 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-function userToAdminUser(user: User): AdminUser {
-  return {
-    id: user.id,
-    email: user.email ?? '',
-    created_at: user.created_at,
-    last_login: user.last_sign_in_at ?? null,
-  }
-}
+const ADMIN_SESSION_KEY = 'eyegonal_admin_session'
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Ottieni sessione iniziale
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAdminUser(session?.user ? userToAdminUser(session.user) : null)
+    try {
+      const sessionData = localStorage.getItem(ADMIN_SESSION_KEY)
+      if (sessionData) {
+        const session = JSON.parse(sessionData)
+        const sessionTime = new Date(session.timestamp).getTime()
+        const hoursDiff = (Date.now() - sessionTime) / (1000 * 60 * 60)
+        if (hoursDiff < 24) {
+          setAdminUser(session.adminUser)
+        } else {
+          localStorage.removeItem(ADMIN_SESSION_KEY)
+        }
+      }
+    } catch {
+      localStorage.removeItem(ADMIN_SESSION_KEY)
+    } finally {
       setLoading(false)
-    })
-
-    // Ascolta cambiamenti di auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAdminUser(session?.user ? userToAdminUser(session.user) : null)
-    })
-
-    return () => subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const base = typeof window !== 'undefined' ? window.location.origin : ''
+      const res = await fetch(`${base}/api/verify-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-      if (error) {
-        return { error: { message: error.message === 'Invalid login credentials' ? 'Email o password non corretti' : error.message } }
+      const data = await res.json()
+
+      if (!res.ok) {
+        return { error: { message: data.error || 'Credenziali non valide' } }
       }
 
-      if (data.user) {
-        setAdminUser(userToAdminUser(data.user))
+      const sessionData = {
+        adminUser: data.adminUser,
+        timestamp: new Date().toISOString(),
       }
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData))
+      setAdminUser(data.adminUser)
       return { error: null }
     } catch (error) {
       console.error('Error during admin sign in:', error)
@@ -70,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    localStorage.removeItem(ADMIN_SESSION_KEY)
     setAdminUser(null)
   }
 

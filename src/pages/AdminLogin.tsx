@@ -147,7 +147,7 @@ export function AdminLogin() {
             {/* Setup Info */}
             <div className="text-center">
               <p className="text-xs text-eyegonal-gray-500 dark:text-eyegonal-gray-400">
-                Crea l&apos;admin in Supabase: Authentication → Users → Add user
+                Login tramite tabella admin_users
               </p>
             </div>
           </motion.form>

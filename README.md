@@ -87,6 +87,13 @@ Il progetto usa:
 
 Modifica i prodotti in `src/pages/Collezione.tsx` e aggiungi le immagini in `public/images/products/`.
 
+## Admin Login (Vercel)
+
+Il login usa la tabella `admin_users` via API `/api/verify-admin`. In Vercel aggiungi:
+
+- `SUPABASE_URL` – URL progetto Supabase
+- `SUPABASE_SERVICE_ROLE_KEY` – Chiave service_role (Supabase Dashboard → Settings → API)
+
 ## Link Utili
 
 - [Instagram](https://www.instagram.com/eyegonal)
