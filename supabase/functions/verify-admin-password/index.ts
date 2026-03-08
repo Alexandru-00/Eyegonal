@@ -3,13 +3,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import bcrypt from 'https://deno.land/x/bcrypt/mod.ts'
 
 serve(async (req) => {
-  // Enable CORS
+  // CORS preflight - MUST return 200 OK
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
+    return new Response(null, {
+      status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Max-Age': '86400',
       },
     })
   }
@@ -30,19 +32,15 @@ serve(async (req) => {
       )
     }
 
-    // Create Supabase client
-    const supabaseClient = createClient(
+    // Supabase admin client - SERVICE_ROLE bypassa RLS per leggere admin_users
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
     )
 
-    // Find admin user by email
-    const { data: adminData, error: adminError } = await supabaseClient
+    // Find admin user by email (service_role bypassa RLS)
+    const { data: adminData, error: adminError } = await supabaseAdmin
       .from('admin_users')
       .select('*')
       .eq('email', email)
@@ -78,13 +76,18 @@ serve(async (req) => {
     }
 
     // Update last login
-    await supabaseClient
+    await supabaseAdmin
       .from('admin_users')
       .update({ last_login: new Date().toISOString() })
       .eq('id', adminData.id)
 
-    // Create session token using Supabase Auth
-    const { data: authData, error: authError } = await supabaseClient.auth.signInAnonymously()
+    // Session opzionale - non necessario per la nostra auth custom
+    const supabaseAnon = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { auth: { persistSession: false } }
+    )
+    const { data: authData, error: authError } = await supabaseAnon.auth.signInAnonymously()
 
     if (authError) {
       console.error('Auth error:', authError)
