@@ -144,12 +144,10 @@ export function AdminLogin() {
               </Button>
             </div>
 
-            {/* Default Credentials Info */}
+            {/* Setup Info */}
             <div className="text-center">
               <p className="text-xs text-eyegonal-gray-500 dark:text-eyegonal-gray-400">
-                Credenziali di default:<br />
-                Email: admin@eyegonal.com<br />
-                Password: admin123
+                Crea l&apos;admin in Supabase: Authentication → Users → Add user
               </p>
             </div>
           </motion.form>

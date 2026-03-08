@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { User } from '@supabase/supabase-js'
 import { supabase } from '@/supabase'
 
 interface AdminUser {
@@ -22,67 +23,45 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-const ADMIN_SESSION_KEY = 'eyegonal_admin_session'
+function userToAdminUser(user: User): AdminUser {
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    created_at: user.created_at,
+    last_login: user.last_sign_in_at ?? null,
+  }
+}
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing admin session
-    checkAdminSession()
-  }, [])
-
-  const checkAdminSession = () => {
-    try {
-      const sessionData = localStorage.getItem(ADMIN_SESSION_KEY)
-      if (sessionData) {
-        const session = JSON.parse(sessionData)
-        // Check if session is still valid (24 hours)
-        const sessionTime = new Date(session.timestamp).getTime()
-        const now = new Date().getTime()
-        const hoursDiff = (now - sessionTime) / (1000 * 60 * 60)
-
-        if (hoursDiff < 24) {
-          setAdminUser(session.adminUser)
-        } else {
-          // Session expired
-          localStorage.removeItem(ADMIN_SESSION_KEY)
-        }
-      }
-    } catch (error) {
-      console.error('Error checking admin session:', error)
-      localStorage.removeItem(ADMIN_SESSION_KEY)
-    } finally {
+    // Ottieni sessione iniziale
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAdminUser(session?.user ? userToAdminUser(session.user) : null)
       setLoading(false)
-    }
-  }
+    })
+
+    // Ascolta cambiamenti di auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAdminUser(session?.user ? userToAdminUser(session.user) : null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Call Supabase Edge Function to verify admin credentials
-      const { data, error } = await supabase.functions.invoke('verify-admin-password', {
-        body: { email, password }
-      })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
       if (error) {
-        console.error('Function error:', error)
-        return { error: { message: 'Errore durante il login. Riprova.' } }
+        return { error: { message: error.message === 'Invalid login credentials' ? 'Email o password non corretti' : error.message } }
       }
 
-      if (data.error) {
-        return { error: { message: data.error } }
+      if (data.user) {
+        setAdminUser(userToAdminUser(data.user))
       }
-
-      // Create session with admin user data
-      const sessionData = {
-        adminUser: data.adminUser,
-        timestamp: new Date().toISOString()
-      }
-
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData))
-      setAdminUser(data.adminUser)
-
       return { error: null }
     } catch (error) {
       console.error('Error during admin sign in:', error)
@@ -91,7 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   const signOut = async () => {
-    localStorage.removeItem(ADMIN_SESSION_KEY)
+    await supabase.auth.signOut()
     setAdminUser(null)
   }
 
