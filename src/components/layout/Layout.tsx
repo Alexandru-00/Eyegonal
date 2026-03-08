@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Header } from './Header'
 import { Footer } from './Footer'
@@ -8,9 +9,12 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
+  const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {!isAdminRoute && <Header />}
       <motion.main
         className="flex-1"
         initial={{ opacity: 0 }}
@@ -20,7 +24,7 @@ export function Layout({ children }: LayoutProps) {
       >
         {children}
       </motion.main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   )
 }
