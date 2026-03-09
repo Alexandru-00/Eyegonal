@@ -52,24 +52,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    console.log('[Auth] Login avviato per email:', email)
     try {
       const { data, error } = await supabase.rpc('verify_admin_login', {
         p_email: email,
         p_password: password,
       })
 
+      console.log('[Auth] Risposta Supabase:', { data, error, status: (error as any)?.status })
+
       if (error) {
-        return { error: { message: error.message || 'Errore durante il login' } }
+        const msg = error.message || 'Errore durante il login'
+        const is404 = (error as any)?.status === 404 || (error as any)?.code === 'PGRST116' || /404|not found/i.test((error as any)?.message || '')
+        if (is404) {
+          console.error('[Auth] 404 - La funzione verify_admin_login NON esiste nel DB. Esegui le migrazioni 0002, 0003 e 0004 in Supabase SQL Editor.')
+        } else {
+          console.error('[Auth] Errore RPC:', msg)
+        }
+        return { error: { message: msg } }
       }
 
       const errMsg = data?.error
       if (errMsg) {
+        console.warn('[Auth] Errore da DB (credenziali):', errMsg)
         return { error: { message: errMsg } }
       }
 
       const admin = data?.adminUser
       const sessionToken = data?.sessionToken
       if (!admin || !sessionToken) {
+        console.warn('[Auth] Risposta incompleta - admin:', !!admin, 'sessionToken:', !!sessionToken)
         return { error: { message: 'Credenziali non valide' } }
       }
 
@@ -80,9 +92,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData))
       setAdminUser(admin)
+      console.log('[Auth] Login OK')
       return { error: null }
     } catch (error) {
-      console.error('Error during admin sign in:', error)
+      console.error('[Auth] Eccezione durante login:', error)
       return { error: { message: 'Errore durante il login. Riprova.' } }
     }
   }
